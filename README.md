@@ -2,7 +2,9 @@
 
 Упрощённый сервис бронирования времени по мотивам [Cal.com](https://cal.com/).
 Владелец календаря публикует типы встреч, гость выбирает свободный слот и записывается
-без регистрации. Финальный проект модуля 1 курса Hexlet «ИИ для разработчиков».
+без регистрации. Проект курса Hexlet «ИИ для разработчиков»: приложение сделано в модуле 1,
+в модуле 2 поверх него настраивается рабочий процесс с агентом в GitHub — issue, triage,
+pull request, ревью и регулярные проверки по расписанию. План развития — [`BACKLOG.md`](./BACKLOG.md).
 
 **Приложение опубликовано:** https://calendar-booking-y3dz.onrender.com
 
@@ -10,8 +12,8 @@
 > после сна ждёт около минуты, пока поднимется контейнер.
 
 ### Hexlet tests and linter status:
-[![Actions Status](https://github.com/malcevsergeyq/ai-for-developers-project-386/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/malcevsergeyq/ai-for-developers-project-386/actions)
-[![ci](https://github.com/malcevsergeyq/ai-for-developers-project-386/actions/workflows/ci.yml/badge.svg)](https://github.com/malcevsergeyq/ai-for-developers-project-386/actions/workflows/ci.yml)
+[![Actions Status](https://github.com/malcevsergeyq/ai-for-developers-project-387/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/malcevsergeyq/ai-for-developers-project-387/actions)
+[![ci](https://github.com/malcevsergeyq/ai-for-developers-project-387/actions/workflows/ci.yml/badge.svg)](https://github.com/malcevsergeyq/ai-for-developers-project-387/actions/workflows/ci.yml)
 
 ## Как устроено
 
