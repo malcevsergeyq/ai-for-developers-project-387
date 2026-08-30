@@ -30,6 +30,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      # Агент должен завести issue с разбором. Без этого права он не находит способа
+      # это сделать и уходит искать учётные данные по конфигам gh — на чём и виснет.
+      issues: write
     env:
       TARGET_URL: ${{ github.event.inputs.url || 'https://calendar-booking-y3dz.onrender.com' }}
 
@@ -84,6 +87,9 @@ jobs:
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          # Токен передаётся явно: при запуске по расписанию нет комментария, из контекста
+          # которого агент получил бы доступ, — а без токена gh работать не может.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode/big-pickle
           prompt: |

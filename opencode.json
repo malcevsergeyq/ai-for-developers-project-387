@@ -3,7 +3,8 @@
   "permission": {
     "external_directory": {
       "/tmp/**": "allow",
-      "/home/runner/work/_temp/**": "allow"
+      "/home/runner/work/_temp/**": "allow",
+      "/home/runner/.config/gh/**": "allow"
     }
   }
 }
