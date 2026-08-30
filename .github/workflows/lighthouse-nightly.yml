@@ -1,0 +1,100 @@
+name: lighthouse-nightly
+
+# Ночной замер производительности задеплоенного приложения. Смысл не в самом отчёте,
+# а в том, что деградация копится незаметно: каждый PR добавляет по чуть-чуть, и
+# замечают её тогда, когда она уже ощутима для пользователя. Прогон по расписанию
+# фиксирует изменение до того, как оно станет проблемой.
+
+on:
+  schedule:
+    # 03:00 UTC — 06:00 по Москве: отчёт готов к началу рабочего дня.
+    # Точное время GitHub не гарантирует, при нагрузке возможна задержка в несколько минут.
+    - cron: '0 3 * * *'
+  # Второй триггер — ручной запуск: без него отладку промпта пришлось бы ждать до следующей ночи.
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Адрес, который проверяем'
+        required: false
+        default: 'https://calendar-booking-y3dz.onrender.com'
+        type: string
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      TARGET_URL: ${{ github.event.inputs.url || 'https://calendar-booking-y3dz.onrender.com' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # Free-план Render усыпляет сервис после 15 минут без запросов, а ночью запросов нет
+      # заведомо. Без пробуждения Lighthouse измерил бы холодный старт контейнера и выдал бы
+      # мусор: метрики говорили бы о тарифе хостинга, а не о приложении.
+      - name: Разбудить приложение
+        run: |
+          for attempt in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$TARGET_URL" || echo 000)
+            echo "попытка $attempt: HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "приложение отвечает, даём ему 5 секунд на прогрев"
+              sleep 5
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::приложение не ответило 200 за 20 попыток — замер отменён"
+          exit 1
+
+      - name: Замер Lighthouse
+        run: |
+          npx --yes lighthouse "$TARGET_URL" \
+            --output=json --output=html \
+            --output-path=./lighthouse-report \
+            --chrome-flags="--headless --no-sandbox"
+
+      # Отчёт сохраняется независимо от того, что скажет агент: сырые данные должны
+      # пережить любую ошибку в разборе.
+      - name: Сохранить отчёт
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ github.run_id }}
+          path: lighthouse-report.*
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Разбор отчёта агентом
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/big-pickle
+          prompt: |
+            Прочитай файл lighthouse-report.report.json в корне репозитория — это отчёт
+            Lighthouse по адресу, указанному в поле requestedUrl.
+
+            Создай issue с заголовком вида «Lighthouse: отчёт за <дата прогона>» и телом
+            на русском языке. В теле:
+
+            1. Таблица с четырьмя категориями (performance, accessibility, best-practices,
+               seo) и их оценками в процентах.
+            2. Ключевые метрики производительности с числовыми значениями:
+               LCP, CLS, TBT, Speed Index.
+            3. До пяти самых дорогих замечаний из раздела audits, у которых score меньше
+               0.9 — с указанием, сколько они стоят в миллисекундах или байтах.
+            4. Раздел «Что делать» — конкретные правки в этом репозитории, а не общие
+               советы. Если для метрики виноват хостинг, а не код, так и напиши.
+
+            Важно про контекст: приложение живёт на free-плане Render, который усыпляет
+            контейнер после 15 минут простоя. Перед замером workflow будит приложение,
+            поэтому холодный старт в метрики попасть не должен. Если видишь признаки
+            обратного, отметь это отдельно.
+
+            Ничего в коде не меняй и pull request не открывай — только issue.
