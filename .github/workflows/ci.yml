@@ -1,13 +1,22 @@
 name: ci
 
 on:
+  # Только main: ветки под PR покрыты триггером pull_request, а `branches: ['**']`
+  # давал два прогона на каждый PR — по одному от каждого события. На PR #4 это было
+  # видно прямо в проверках: два одинаковых `check` по 58 и 56 секунд.
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
+
+# Права заданы явно. Без этой секции действует умолчание репозитория, а оно меняется
+# одной галкой в настройках — и тогда ci молча получит больше, чем ему нужно.
+permissions:
+  contents: read
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v5

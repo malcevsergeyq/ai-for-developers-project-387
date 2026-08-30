@@ -21,6 +21,10 @@ jobs:
        contains(github.event.comment.body, ' /opencode') ||
        startsWith(github.event.comment.body, '/opencode'))
     runs-on: ubuntu-latest
+    # Зависшая джоба без лимита работает до умолчания GitHub — шести часов. За одну
+    # сессию 30.08 два прогона висели 42 и 55 минут и были остановлены руками; успешные
+    # укладывались в 30 секунд для разбора и 5 минут для правки кода.
+    timeout-minutes: 15
     permissions:
       id-token: write
       contents: read
