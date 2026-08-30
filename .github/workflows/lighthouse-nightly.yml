@@ -75,7 +75,12 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      # Разбор — надстройка над замером, а не его условие. Отчёт к этому моменту уже
+      # сохранён артефактом, поэтому зависший или упавший агент не должен ни ронять
+      # прогон, ни занимать раннер: свой лимит и continue-on-error закрывают оба случая.
       - name: Разбор отчёта агентом
+        timeout-minutes: 10
+        continue-on-error: true
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
