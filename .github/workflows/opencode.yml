@@ -37,4 +37,7 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         with:
-          model: opencode/claude-sonnet-5
+          # Единственная модель OpenCode Zen, доступная без привязанной карты.
+          # Остальные (claude-*, gemini-*, glm-*, deepseek-*) отвечают
+          # "No payment method" — проверено и в CI, и локально.
+          model: opencode/big-pickle
