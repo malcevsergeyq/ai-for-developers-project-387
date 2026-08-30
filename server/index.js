@@ -5,32 +5,7 @@ import { createApp } from './app.js'
 import { createPool } from './db.js'
 import { createMemoryRepositories } from './repositories/memory.js'
 import { createPostgresRepositories } from './repositories/postgres.js'
-
-/**
- * Демо-данные при пустом хранилище. Нужны не для красоты: проверка проекта открывает
- * публичную страницу и идёт по пути записи, а в пустом календаре типов встреч нет —
- * и дойти до выбора слота физически не до чего.
- */
-const DEMO_EVENT_TYPES = [
-  {
-    title: 'Демо-звонок',
-    description: 'Короткий разговор: покажу продукт и отвечу на вопросы.',
-    durationMinutes: 30,
-  },
-  {
-    title: 'Консультация',
-    description: 'Разбираем вашу задачу подробно, с примерами и планом действий.',
-    durationMinutes: 60,
-  },
-]
-
-const seedIfEmpty = async (repositories) => {
-  if ((await repositories.eventTypes.count()) > 0) return
-  for (const eventType of DEMO_EVENT_TYPES) {
-    await repositories.eventTypes.create(eventType)
-  }
-  console.log(`Создано демо-типов встреч: ${DEMO_EVENT_TYPES.length}`)
-}
+import { isSeedEnabled, seedIfEmpty } from './seed.js'
 
 /**
  * Хранилище выбирается по наличию `DATABASE_URL`. Это не «резервный вариант на всякий
@@ -47,7 +22,20 @@ console.log(
     : 'Хранилище: в памяти — DATABASE_URL не задан, данные исчезнут при перезапуске',
 )
 
-await seedIfEmpty(repositories)
+/**
+ * Решение о засеве логируется в обоих случаях: иначе «откуда взялись эти записи» и
+ * «почему список пустой» одинаково не читаются из логов старта.
+ */
+if (isSeedEnabled()) {
+  const created = await seedIfEmpty(repositories)
+  console.log(
+    created > 0
+      ? `Демо-данные включены: создано типов встреч — ${created}`
+      : 'Демо-данные включены: хранилище не пустое, засев не потребовался',
+  )
+} else {
+  console.log('Демо-данные отключены: SEED_DEMO выключен')
+}
 
 /**
  * Собранный фронт лежит рядом только в образе — в дев-режиме его нет, и тогда
