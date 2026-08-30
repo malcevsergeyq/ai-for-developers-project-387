@@ -43,10 +43,11 @@ export default defineConfig({
   webServer: IS_EXTERNAL ? undefined : [
     {
       // Без DATABASE_URL бэкенд поднимается на хранилище в памяти и засевает демо-данные —
-      // ровно тот режим, в котором приложение попадёт на проверку.
+      // ровно тот режим, в котором приложение попадёт на проверку Hexlet. `SEED_DEMO=true`
+      // задан явно, чтобы прогон не зависел от значения флага по умолчанию.
       command: 'node server/index.js',
       url: `${API_URL}/event-types`,
-      env: { PORT: String(API_PORT) },
+      env: { PORT: String(API_PORT), SEED_DEMO: 'true' },
       reuseExistingServer: false,
       timeout: 30_000,
     },
