@@ -1,8 +1,11 @@
+import { lazy, Suspense } from 'react'
 import { Link, NavLink, Route, Routes } from 'react-router-dom'
-import AdminPage from '@/pages/AdminPage'
-import BookingPage from '@/pages/BookingPage'
 import EventTypesPage from '@/pages/EventTypesPage'
-import NotFoundPage from '@/pages/NotFoundPage'
+import { Loading } from '@/components/states'
+
+const AdminPage = lazy(() => import('@/pages/AdminPage'))
+const BookingPage = lazy(() => import('@/pages/BookingPage'))
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
   return (
@@ -36,12 +39,14 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-10">
-        <Routes>
-          <Route path="/" element={<EventTypesPage />} />
-          <Route path="/book/:eventTypeId" element={<BookingPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/" element={<EventTypesPage />} />
+            <Route path="/book/:eventTypeId" element={<BookingPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <footer className="mx-auto max-w-5xl px-6 pb-10 text-xs text-muted-foreground">
