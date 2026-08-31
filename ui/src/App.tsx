@@ -1,10 +1,10 @@
 import { lazy, Suspense } from 'react'
 import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import EventTypesPage from '@/pages/EventTypesPage'
 import { Loading } from '@/components/states'
 
 const AdminPage = lazy(() => import('@/pages/AdminPage'))
 const BookingPage = lazy(() => import('@/pages/BookingPage'))
-const EventTypesPage = lazy(() => import('@/pages/EventTypesPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
