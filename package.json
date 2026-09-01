@@ -13,7 +13,8 @@
     "spec:build": "tsp compile spec",
     "mock": "prism mock spec/openapi.yaml --port 4010 --dynamic",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:dev": "playwright test --config playwright.dev.config.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
