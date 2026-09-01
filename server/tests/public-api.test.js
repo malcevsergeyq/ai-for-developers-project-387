@@ -148,6 +148,8 @@ describe('POST /bookings', () => {
     ['время за окном в 14 дней', { start: '2026-09-28T10:00:00Z' }],
     ['время в прошлом', { start: '2026-09-04T10:00:00Z' }],
     ['start не дата', { start: 'завтра' }],
+    ['start без часового пояса', { start: '2026-09-07T09:30:00' }],
+    ['start с пробелом вместо T', { start: '2026-09-07 09:30:00Z' }],
     ['пустое имя', { guestName: '   ' }],
     ['email без собаки', { guestEmail: 'guest.example.com' }],
   ]
@@ -160,5 +162,33 @@ describe('POST /bookings', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.error).toBe('validation_failed')
+  })
+
+  /**
+   * Проверяем именно сообщение, а не только код. Строка без зоны трактуется движком как
+   * локальное время, поэтому на машине с TZ=Europe/Moscow она и до правки давала 400 —
+   * но по другой причине («мимо сетки»), и тест на один лишь код был бы зелёным случайно.
+   */
+  it('на start без часового пояса объясняет, что не так', async () => {
+    const { app, eventTypes } = await buildApp({ eventTypes: [demoCall] })
+    const response = await request(app)
+      .post('/bookings')
+      .send(bookingBody({ eventTypeId: eventTypes[0].id, start: '2026-09-07T09:30:00' }))
+
+    expect(response.status).toBe(400)
+    expect(response.body.error).toBe('validation_failed')
+    expect(response.body.message).toMatch(/часовым поясом/i)
+  })
+
+  // Контракт требует момент времени, а не непременно суффикс `Z`: числовое смещение
+  // однозначно задаёт момент, и `utcDateTime` его допускает. Отвергаем отсутствие зоны.
+  it('принимает start с числовым смещением и приводит его к UTC', async () => {
+    const { app, eventTypes } = await buildApp({ eventTypes: [demoCall] })
+    const response = await request(app)
+      .post('/bookings')
+      .send(bookingBody({ eventTypeId: eventTypes[0].id, start: '2026-09-07T12:30:00+03:00' }))
+
+    expect(response.status).toBe(201)
+    expect(response.body.start).toBe('2026-09-07T09:30:00.000Z')
   })
 })

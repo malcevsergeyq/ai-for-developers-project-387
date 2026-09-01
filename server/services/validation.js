@@ -47,8 +47,27 @@ export const requireDuration = (value, { field, step, min, max }) => {
   return value
 }
 
+/**
+ * Момент времени по RFC 3339 — с обязательной зоной: либо `Z`, либо числовое смещение.
+ * Смещение допускаем: оно задаёт момент однозначно, и `new Date` приведёт его к UTC.
+ */
+const INSTANT_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/
+
 export const requireInstant = (value, { field }) => {
   if (typeof value !== 'string') throw validationFailed(`Поле «${field}» должно быть строкой ISO 8601`)
+
+  /**
+   * Зона проверяется до `new Date`, и это принципиально: строку без зоны движок молча
+   * трактует как локальное время машины, а дальше по коду ходит уже готовый `Date`,
+   * по которому не восстановить, что именно прислал клиент. Контракт обещает
+   * `utcDateTime` — момент времени, а не «09:30 где-то».
+   */
+  if (!INSTANT_PATTERN.test(value)) {
+    throw validationFailed(
+      `Поле «${field}» должно быть моментом времени ISO 8601 с часовым поясом: «2026-08-20T09:00:00Z» или «2026-08-20T12:00:00+03:00»`,
+    )
+  }
+
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) throw validationFailed(`Поле «${field}» не является датой ISO 8601`)
   return date
