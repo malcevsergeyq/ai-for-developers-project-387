@@ -4,14 +4,21 @@ import { API_URL } from './config'
 
 export type Slot = { start: string; end: string }
 
+/**
+ * Идентификатор прогона. Раньше уникальность держалась на счётчике в памяти процесса,
+ * а он обнуляется при каждом старте Playwright: против уже запущенного приложения
+ * (контейнер, деплой) второй прогон заводил «Демо-звонок №1» повторно, и локаторы
+ * находили две карточки вместо одной. Внутри прогона тесты по-прежнему разведены
+ * счётчиком — хранилище одно на всех.
+ */
+const RUN_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+
 let counter = 0
 
-/**
- * Хранилище живёт всё время прогона, а занятость глобальная — поэтому каждый тест
- * заводит собственный тип встречи и работает со своим днём. Иначе тесты дрались бы
- * за одни и те же слоты и падали бы через раз.
- */
-export const uniqueTitle = (prefix: string) => `${prefix} №${(counter += 1)}`
+export const uniqueTitle = (prefix: string) => `${prefix} ${RUN_ID}-${(counter += 1)}`
+
+/** Почта гостя тоже уникальна на прогон: по ней тесты ищут свою бронь в списке владельца. */
+export const uniqueEmail = (prefix: string) => `${prefix}-${RUN_ID}@example.com`
 
 export const createEventType = async (
   request: APIRequestContext,
@@ -42,29 +49,68 @@ export const bookViaApi = async (
       eventTypeId,
       start,
       guestName: 'Кто-то быстрее',
-      guestEmail: 'faster@example.com',
+      guestEmail: uniqueEmail('faster'),
     },
   })
   expect(response.status(), 'слот должен успешно заниматься').toBe(201)
 }
 
-/**
- * Слот на нужное время N-го доступного дня. День берём из ответа API, а не вычисляем
- * заново: дублировать логику окна записи в тесте значило бы проверять её саму собой.
- */
-export const slotOn = (slots: Slot[], dayIndex: number, time: string) => {
-  const days = [...new Set(slots.map((slot) => slot.start.slice(0, 10)))]
-  const day = days[dayIndex]
-  if (!day) throw new Error(`В окне записи нет дня с индексом ${dayIndex}`)
+const SLOT_MINUTES = 30
 
-  const slot = slots.find((item) => item.start.startsWith(day) && item.start.slice(11, 16) === time)
-  if (!slot) throw new Error(`Нет свободного слота ${time} на день ${day}`)
-  return slot
+const minutesBetween = (from: string, to: string) =>
+  (new Date(to).getTime() - new Date(from).getTime()) / 60_000
+
+/**
+ * Цепочка из `count` подряд идущих свободных слотов внутри одного дня.
+ *
+ * Раньше тесты требовали конкретное время конкретного дня (`DAY = 5`, `TIME = '12:00'`).
+ * Против свежего приложения это работало, против уже запущенного — нет: первый же прогон
+ * занимал 12:00, и второй падал ещё до браузера. Свободное время берём из ответа API,
+ * а не вычисляем заново: дублировать правила окна записи в тесте значило бы проверять
+ * их самими собой.
+ */
+export const findFreeRun = (slots: Slot[], count: number) => {
+  const byDay = new Map<string, Slot[]>()
+  for (const slot of slots) {
+    const day = slot.start.slice(0, 10)
+    byDay.set(day, [...(byDay.get(day) ?? []), slot])
+  }
+
+  for (const daySlots of byDay.values()) {
+    for (let start = 0; start + count <= daySlots.length; start += 1) {
+      const chunk = daySlots.slice(start, start + count)
+      const consecutive = chunk.every(
+        (slot, index) =>
+          index === 0 || minutesBetween(chunk[index - 1].start, slot.start) === SLOT_MINUTES,
+      )
+      if (consecutive) return chunk
+    }
+  }
+
+  throw new Error(
+    `В окне записи не осталось ${count} свободных слотов подряд в один день — ` +
+      'приложение забронировано целиком, данные пора сбросить',
+  )
 }
 
-/** Кнопки дней подписаны днём недели — по нему они и отличаются от кнопок времени. */
-export const dayButton = (page: Page, index: number) =>
-  page.getByRole('button', { name: /^(пн|вт|ср|чт|пт|сб|вс),/ }).nth(index)
+/** Подпись кнопки времени: интерфейс показывает UTC, поэтому берём часы прямо из ISO. */
+export const timeOf = (slot: Slot) => slot.start.slice(11, 16)
+
+const dayLabel = new Intl.DateTimeFormat('ru-RU', {
+  day: 'numeric',
+  month: 'long',
+  timeZone: 'UTC',
+})
+
+/**
+ * Кнопка дня ищется по дате, а не по порядковому номеру: у типов встреч разной длительности
+ * набор доступных дней разный, и один и тот же индекс означал бы разные дни. Регулярка
+ * с границей нужна, чтобы «1 августа» не совпало внутри «21 августа».
+ */
+export const dayButtonFor = (page: Page, slot: Slot) => {
+  const label = dayLabel.format(new Date(slot.start))
+  return page.getByRole('button', { name: new RegExp(`(^|\\s)${label}$`) })
+}
 
 export const slotButton = (page: Page, time: string) =>
   page.getByRole('button', { name: time, exact: true })
