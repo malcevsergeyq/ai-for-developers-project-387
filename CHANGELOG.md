@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/malcevsergeyq/ai-for-developers-project-387/compare/v1.0.0...v1.0.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deploy:** привести SEED_DEMO к тому, что происходит на проде ([#16](https://github.com/malcevsergeyq/ai-for-developers-project-387/issues/16)) ([611e2b2](https://github.com/malcevsergeyq/ai-for-developers-project-387/commit/611e2b2ed4fdbd15ee05bcbe1e5421285fa951f8))
+
 ## 1.0.0 (2026-09-20)
 
 Первый релиз «Записи на звонок»: владелец публикует типы встреч, гость выбирает свободный слот и записывается без регистрации.
