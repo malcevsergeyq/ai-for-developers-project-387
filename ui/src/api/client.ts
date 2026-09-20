@@ -57,7 +57,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError(response.status, code, message)
   }
 
-  return (await response.json()) as T
+  /**
+   * Успешный ответ тоже может оказаться не JSON: если `VITE_API_URL` не задан или указывает
+   * не туда, запрос остаётся у дев-сервера, а тот на неизвестный путь отдаёт `index.html`
+   * со статусом 200. Без этой ветки пользователь видел `Unexpected token '<'` — сообщение,
+   * по которому не догадаться, что дело в адресе бэкенда.
+   */
+  try {
+    return (await response.json()) as T
+  } catch {
+    throw new ApiError(
+      response.status,
+      'invalid_response',
+      'Сервер ответил не в формате JSON. Похоже, запрос ушёл не на бэкенд — проверьте VITE_API_URL.',
+    )
+  }
 }
 
 export const api = {

@@ -6,15 +6,18 @@ import { createPool } from './db.js'
 import { createMemoryRepositories } from './repositories/memory.js'
 import { createPostgresRepositories } from './repositories/postgres.js'
 import { isSeedEnabled, seedIfEmpty } from './seed.js'
+import { installShutdown } from './shutdown.js'
 
 /**
  * Хранилище выбирается по наличию `DATABASE_URL`. Это не «резервный вариант на всякий
  * случай», а требование среды: проверка проекта собирает только Dockerfile и запускает
  * контейнер, базы там нет. С переменной — Postgres, без неё — память.
  */
-const repositories = process.env.DATABASE_URL
-  ? createPostgresRepositories(createPool())
-  : createMemoryRepositories()
+// Пул нужен и после старта: при остановке его закрывают, иначе процесс держат
+// открытые соединения с базой.
+const pool = process.env.DATABASE_URL ? createPool() : null
+
+const repositories = pool ? createPostgresRepositories(pool) : createMemoryRepositories()
 
 console.log(
   process.env.DATABASE_URL
@@ -49,6 +52,10 @@ console.log(staticDir ? `Отдаём собранный фронт из ${stati
 const app = createApp({ repositories, staticDir })
 const port = process.env.PORT ?? 3000
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Сервер слушает http://localhost:${port}`)
 })
+
+// Объект сервера нужен именно здесь: без него нечего закрывать по сигналу, и контейнер
+// уходит по SIGKILL с кодом 137 вместо штатной остановки.
+installShutdown({ server, pool })

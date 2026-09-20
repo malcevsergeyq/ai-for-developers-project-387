@@ -66,6 +66,12 @@ jobs:
       - name: e2e-сценарии
         run: npm run test:e2e
 
+      # Отдельный прогон дев-связки из README: адрес API там приходит из
+      # `ui/.env.development`, а не от Playwright, и без этого шага сломанную инструкцию
+      # по запуску не поймал бы ни один тест.
+      - name: Дев-связка из README
+        run: npm run test:e2e:dev
+
       - uses: actions/upload-artifact@v5
         if: ${{ !cancelled() }}
         with:

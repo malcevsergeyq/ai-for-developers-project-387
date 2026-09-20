@@ -3,12 +3,14 @@ import { expect, test } from '@playwright/test'
 import {
   bookViaApi,
   createEventType,
-  dayButton,
+  dayButtonFor,
   fetchSlots,
   fillGuestForm,
+  findFreeRun,
   openBookingPage,
   slotButton,
-  slotOn,
+  timeOf,
+  uniqueEmail,
   uniqueTitle,
 } from './helpers'
 
@@ -22,16 +24,14 @@ test('повторная запись на занятый слот не прох
   page,
   request,
 }) => {
-  const DAY = 7
-  const TIME = '12:00'
-
   const eventType = await createEventType(request, { title: uniqueTitle('Демо-конфликт') })
-  const slot = slotOn(await fetchSlots(request, eventType.id), DAY, TIME)
+  // Два подряд: первый займём в обход браузера, второй обязан остаться в списке.
+  const [slot, next] = findFreeRun(await fetchSlots(request, eventType.id), 2)
 
   await openBookingPage(page, eventType.title)
-  await dayButton(page, DAY).click()
-  await slotButton(page, TIME).click()
-  await fillGuestForm(page, { name: 'Опоздавший гость', email: 'late@example.com' })
+  await dayButtonFor(page, slot).click()
+  await slotButton(page, timeOf(slot)).click()
+  await fillGuestForm(page, { name: 'Опоздавший гость', email: uniqueEmail('late') })
 
   // Пока гость заполнял форму, слот заняли в обход браузера.
   await bookViaApi(request, { eventTypeId: eventType.id, start: slot.start })
@@ -47,6 +47,6 @@ test('повторная запись на занятый слот не прох
 
   // И список слотов обновился сам — гостю не нужно перезагружать страницу,
   // чтобы увидеть актуальное свободное время.
-  await expect(slotButton(page, TIME)).toHaveCount(0)
-  await expect(slotButton(page, '12:30')).toBeVisible()
+  await expect(slotButton(page, timeOf(slot))).toHaveCount(0)
+  await expect(slotButton(page, timeOf(next))).toBeVisible()
 })

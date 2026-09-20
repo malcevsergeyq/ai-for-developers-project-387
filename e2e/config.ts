@@ -17,3 +17,11 @@ export const WEB_PORT = 4173
 export const IS_EXTERNAL = Boolean(external)
 export const API_URL = external ?? `http://127.0.0.1:${API_PORT}`
 export const WEB_URL = external ?? `http://127.0.0.1:${WEB_PORT}`
+
+/**
+ * Отдельная пара портов для дев-прогона (`playwright.dev.config.ts`): там проверяется
+ * связка из README, а она названа конкретными портами — 3000 и 5173. Подставить сюда
+ * что-то другое значило бы проверять не то, что написано в инструкции.
+ */
+export const DEV_API_URL = 'http://127.0.0.1:3000'
+export const DEV_WEB_URL = 'http://127.0.0.1:5173'

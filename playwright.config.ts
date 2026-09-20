@@ -13,6 +13,9 @@ import { API_PORT, API_URL, IS_EXTERNAL, WEB_PORT, WEB_URL } from './e2e/config'
 
 export default defineConfig({
   testDir: './e2e',
+  // Дев-связка проверяется отдельным конфигом: ей нужны другие порты и, главное,
+  // отсутствие `VITE_API_URL` в окружении — здесь он передаётся ниже.
+  testIgnore: 'dev-smoke.spec.ts',
   timeout: 30_000,
   expect: { timeout: 7_000 },
 
