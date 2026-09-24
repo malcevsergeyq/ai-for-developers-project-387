@@ -2,17 +2,27 @@ name: review
 
 on:
   pull_request:
-    # Не synchronize: ревью на каждый пуш превращается в шум. Повторное — перевести PR
-    # в draft и обратно (ready_for_review); /oc review не подходит — его обрабатывает
-    # opencode.yml агентом build, без этих запретов и этого prompt'а.
-    types: [opened, ready_for_review]
+    # Как в уроке (модуль 2, «Автоматический ревью при открытии PR»): ревью повторяется
+    # после каждой правки — так видно, закрыты ли замечания. Сначала synchronize был
+    # убран ради тишины, с расчётом на ручной /oc review, — но /oc обрабатывает
+    # opencode.yml агентом build, без этих запретов и этого prompt'а, так что ручного
+    # повтора того же ревью нет.
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# Шум от synchronize: каждое ревью — новый комментарий. Серия быстрых пушей отменяет
+# незаконченный прогон, и ревью получает только последняя версия PR.
+concurrency:
+  group: review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   review:
     # Черновики ждут ready_for_review. Форки пропускаем: секретов им GitHub не даёт,
     # ревью упало бы без ключа (pull_request_target не берём — это pwn request).
-    # release-please — только версия и changelog. PR агента (opencode-agent[bot])
-    # не отсекаем: код, который никто не писал руками, проверяем в первую очередь.
+    # release-please — только версия и changelog.
+    # Отличие от урока: там пропускаются все боты («бот реагирует на код человека»),
+    # здесь PR агента (opencode-agent[bot]) ревьюятся — это 4 из первых 10 PR,
+    # и их код никто не писал руками. Петли нет: ревьюер ничего не пушит.
     if: |
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
