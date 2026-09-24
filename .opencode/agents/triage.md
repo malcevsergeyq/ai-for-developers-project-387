@@ -17,6 +17,14 @@ permission:
   grep: allow
   # Явно, а не наследованием: в opencode.json для /oc открыт весь /tmp и ~/.config/gh.
   external_directory: deny
+  # Shell закрыт, но не целиком — только из-за бага бесплатного тарифа Zen
+  # (anomalyco/opencode#51193): агент с полностью запрещённым shell получает
+  # «OpenCode's free tier can only be used from within OpenCode» (так упал прогон
+  # ревью на PR #19). "ask" не годится — в CI подтверждать некому, агент повиснет.
+  # "pwd" без * — точное совпадение: одна команда, без аргументов и флагов.
+  bash:
+    "*": deny
+    "pwd": allow
   # Остальное закрыто намеренно, но три пункта стоит назвать явно:
   # - edit: если агент изменит файл, экшен сам закоммитит правку и откроет PR
   #   (github.handler.ts, ветка dirty). Запрет в prompt'е — просьба, этот — барьер.
