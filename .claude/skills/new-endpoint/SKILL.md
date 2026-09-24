@@ -76,6 +76,7 @@ server/
 │                          404 на неизвестный путь, единый обработчик ошибок
 ├── index.js               точка входа: выбор хранилища по DATABASE_URL, засев, listen
 ├── db.js                  создание пула pg
+├── seed.js, shutdown.js   демо-засев по SEED_DEMO и остановка по SIGTERM — к эндпоинтам не относятся
 ├── errors.js              HttpError и фабрики ошибок контракта
 ├── time.js                сетка слотов, окно записи, overlaps() — одна на всё приложение
 ├── routes/                public.routes.js, admin.routes.js — только HTTP: параметры, коды
