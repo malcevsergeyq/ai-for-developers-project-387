@@ -9,10 +9,11 @@ jobs:
     if: contains(fromJson('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Комментарий публикует GITHUB_TOKEN (use_github_token ниже), поэтому эти права —
+    # настоящая граница. id-token не нужен — обмена OIDC на токен App больше нет.
     permissions:
-      id-token: write
       contents: read
-      issues: read
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -24,8 +25,12 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_CONFIG_CONTENT: '{"default_agent": "triage"}'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode/big-pickle
+          # Без этого экшен кладёт токен GitHub App в .git/config, где его прочитал бы
+          # обычный read (нашло первое авторевью, PR #19).
+          use_github_token: true
           prompt: |
             Тебе пришёл новый issue в репозитории «Календарь звонков» — сервис записи
             на звонок (бэк server/, фронт ui/, контракт API spec/main.tsp).

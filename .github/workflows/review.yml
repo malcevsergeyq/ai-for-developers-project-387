@@ -2,7 +2,9 @@ name: review
 
 on:
   pull_request:
-    # Не synchronize: ревью на каждый пуш превращается в шум, повторное — вручную через /oc review.
+    # Не synchronize: ревью на каждый пуш превращается в шум. Повторное — перевести PR
+    # в draft и обратно (ready_for_review); /oc review не подходит — его обрабатывает
+    # opencode.yml агентом build, без этих запретов и этого prompt'а.
     types: [opened, ready_for_review]
 
 jobs:
@@ -16,36 +18,54 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Первый прогон (PR #19) занял 9 минут из 10 — запас нужен больше.
+    timeout-minutes: 15
+    # Комментарий публикует GITHUB_TOKEN (use_github_token ниже), поэтому эти права —
+    # настоящая граница: токен умеет ровно это и умирает вместе с прогоном.
+    # id-token не нужен — обмена OIDC на токен App больше нет.
     permissions:
-      id-token: write
       contents: read
-      pull-requests: read
+      pull-requests: write
       issues: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          # Вся история: экшен даёт агенту только список изменённых файлов, diff агент
-          # строит сам через git diff, а в клоне на один коммит сравнивать не с чем.
+          # Вся история: в клоне на один коммит git diff не с чем сравнивать.
           fetch-depth: 0
           persist-credentials: false
+
+      # Экшен даёт агенту только список изменённых файлов, без diff. Готовим его здесь,
+      # а не даём агенту shell: первое авторевью нашло, что "git diff *" пропускает
+      # git diff --no-index — чтение любого файла на раннере.
+      - name: Подготовить diff для агента
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          mkdir -p /tmp/opencode
+          git diff "origin/$BASE_REF...HEAD" > /tmp/opencode/pr.diff
+          wc -l /tmp/opencode/pr.diff
 
       - name: Run opencode
         uses: anomalyco/opencode/github@latest
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_CONFIG_CONTENT: '{"default_agent": "review"}'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode/big-pickle
+          # Без этого экшен берёт токен GitHub App и кладёт его в .git/config, где его
+          # прочитал бы обычный read. С GITHUB_TOKEN на диск ничего не пишется
+          # (github.handler.ts: configureGit вызывается только без use_github_token).
+          use_github_token: true
           prompt: |
             Тебе пришёл pull request в репозиторий «Календарь звонков» — сервис записи
             на звонок (бэк server/, фронт ui/, контракт API spec/main.tsp).
             Устройство проекта и его правила описаны в AGENTS.md — проверяй код на
             соответствие им.
 
-            Прочитай описание PR и связанный issue, если он указан, затем diff:
-            git diff origin/${{ github.event.pull_request.base.ref }}...HEAD
+            Прочитай описание PR и связанный issue, если он указан, затем diff —
+            он уже подготовлен в файле /tmp/opencode/pr.diff.
             Ответь одним комментарием на русском в таком формате:
 
             **Соответствие задаче:** решает ли PR то, что просили в issue; что упущено.
