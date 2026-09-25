@@ -52,7 +52,7 @@
 | Н.1 | Нет workflow автотриажа (`issues`) и авторевью (`pull_request`) с prompt | PR #19; проверено на issue #20, #21 и PR #22 | ✅ |
 | Н.2 | `.claude/skills/db-layer` и `new-endpoint` описывают старую схему из 4 таблиц | PR #22 (`844dec3`): `db-layer/SKILL.md` — «Две таблицы», `new-endpoint/SKILL.md` — эталон `POST /bookings`; авторевью #22 сверило оба с кодом | ✅ |
 | Н.3 | `AGENTS.md:36`: «прод гасит засев через `render.yaml`», а там `true` | PR #22 (`844dec3`): `AGENTS.md`, строка про `npm start`, и `README.md`, раздел про засев, — «на продакшене засев тоже включён намеренно» | ✅ |
-| Н.4 | `AGENTS.md:68`: абсолютный путь к личному Obsidian | PR #22 (`844dec3`): раздел «Журнал изменений» в `AGENTS.md` без пути; `CLAUDE.local.md` в `.gitignore`; `grep Obsidian_Store` по репозиторию пуст | ✅ |
+| Н.4 | `AGENTS.md:68`: абсолютный путь к личному Obsidian | PR #22 (`844dec3`): раздел «Журнал изменений» в `AGENTS.md` без пути; `CLAUDE.local.md` в `.gitignore`; в `AGENTS.md` личного пути больше нет — см. diff `844dec3` | ✅ |
 | Н.5 | Не только починить, но и описать изменения процесса | `AGENT-PROCESS.md`, раздел «Автотриаж и авторевью — что изменилось в процессе» | ✅ |
 
 ## Что сознательно не выполнено
