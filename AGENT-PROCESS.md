@@ -36,7 +36,7 @@ request — и он отвечает туда же.
 | [`ci.yml`](.github/workflows/ci.yml) | push в `main`, любой pull request | `contents: read` | контракт, линтеры, 88 юнит-тестов, сборка фронта, e2e и дев-связка |
 | [`opencode.yml`](.github/workflows/opencode.yml) | комментарий с `/oc` или `/opencode` | read + `id-token: write` | сам агент: разбор задач и правки кода |
 | [`triage.yml`](.github/workflows/triage.yml) | новый issue от своих | read + `issues: write` | автотриаж: тип, чего не хватает, где искать в коде |
-| [`review.yml`](.github/workflows/review.yml) | открытие PR и каждый push в него | read + `pull-requests: write` | авторевью: соответствие задаче, баги, тесты |
+| [`review.yml`](.github/workflows/review.yml) | открытие PR и каждый push в него | `contents: read`, `issues: read`, `pull-requests: write` | авторевью: соответствие задаче, баги, тесты |
 | [`lighthouse-nightly.yml`](.github/workflows/lighthouse-nightly.yml) | cron `0 3 * * 1` и вручную | read + `issues: write` | еженедельный замер продакшена и разбор отчёта |
 | [`release-please.yml`](.github/workflows/release-please.yml) | push в `main` | `contents: write`, `pull-requests: write` | релизный PR и changelog по conventional commits |
 | [`hexlet-check.yml`](.github/workflows/hexlet-check.yml) | push | по умолчанию | проверка платформы, файл трогать нельзя |
