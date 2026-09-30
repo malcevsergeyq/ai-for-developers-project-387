@@ -28,6 +28,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: opencode/big-pickle
+          # Не публиковать сессию OpenCode: для публичного репозитория экшен по умолчанию
+          # шарит её и ставит ссылку в комментарий (github.handler.ts, normalizeShare).
+          # Одного "share": "disabled" в opencode.json мало — экшен всё равно вызовет
+          # share() и прогон упадёт с «Sharing is disabled in configuration».
+          share: false
           # Без этого экшен кладёт токен GitHub App в .git/config, где его прочитал бы
           # обычный read (нашло первое авторевью, PR #19).
           use_github_token: true
