@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/malcevsergeyq/ai-for-developers-project-387/compare/v1.0.1...v1.0.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* **ci:** не публиковать сессии OpenCode; самооценка по фактам ([#25](https://github.com/malcevsergeyq/ai-for-developers-project-387/issues/25)) ([816f2c1](https://github.com/malcevsergeyq/ai-for-developers-project-387/commit/816f2c16c5007ae18b09093e3b734c74daa5a57c))
+
 ## [1.0.1](https://github.com/malcevsergeyq/ai-for-developers-project-387/compare/v1.0.0...v1.0.1) (2026-09-20)
 
 
